@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Bdkq/+EEzC7Kweto3RbY7WJflO5QCJ6O7tAlwn2sitg='; style-src 'sha256-HkZCmWV05GkuGV9pdMKiuC/7+7Q1JHVXids32uML/VU='; connect-src 'self'; img-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="color-scheme" content="dark light">
+<meta name="format-detection" content="telephone=no">
+<title>Notizen</title>
+<style>:root { --bg: #000; --karte: #1c1c1e; --text: #f5f5f7; --text2: #98989f; --linie: #38383a; --feld: #2c2c2e;
+  --blau: #0a84ff; --gruen: #30d158; --orange: #ff9f0a; --rot: #ff453a; }
+@media (prefers-color-scheme: light) {
+  :root { --bg: #f2f2f7; --karte: #fff; --text: #1c1c1e; --text2: #6e6e73; --linie: #e5e5ea; --feld: #f2f2f7;
+    --blau: #007aff; --gruen: #34c759; --orange: #ff9500; --rot: #ff3b30; }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+main { max-width: 560px; margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 32px); }
+h1 { font-size: 30px; font-weight: 700; margin: 4px 0 14px; letter-spacing: -.02em; }
+h2 { font-size: 20px; font-weight: 700; margin: 24px 4px 8px; }
+#tor { padding-top: 12vh; text-align: center; }
+form { display: flex; flex-direction: column; gap: 10px; }
+input[type=password] { width: 100%; padding: 13px 14px; font: inherit; font-size: 17px; color: var(--text);
+  background: var(--karte); border: 1px solid var(--linie); border-radius: 12px; outline: none; }
+input[type=password]:focus { border-color: var(--blau); }
+.merken { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text2); font-size: 15px; }
+button { font: inherit; font-weight: 600; font-size: 17px; padding: 13px; border: 0; border-radius: 12px;
+  background: var(--blau); color: #fff; cursor: pointer; }
+button:disabled { opacity: .5; }
+button.leise { background: none; color: var(--blau); font-weight: 400; font-size: 15px; padding: 10px; }
+#meldung { color: var(--rot); min-height: 1.3em; margin: 2px 0 0; font-size: 15px; }
+.hinweis { margin: 0 0 12px; padding: 8px 12px; border-radius: 12px; background: var(--karte); color: var(--blau);
+  font-size: 13px; font-weight: 600; text-align: center; }
+.karte { background: var(--karte); border-radius: 18px; padding: 16px; margin-bottom: 10px; }
+.zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.zwei .karte { margin: 0; }
+.drei { display: grid; grid-template-columns: repeat(3, 1fr); }
+.drei > div + div { border-left: 1px solid var(--linie); padding-left: 12px; }
+.etikett { margin: 0; font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .02em; }
+.gross { margin: 4px 0; font-size: 44px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.mittel { margin: 4px 0; font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.einheit { font-size: .5em; font-weight: 600; color: var(--text2); margin: 0 4px 0 2px; }
+.zeile { margin: 2px 0; color: var(--text2); font-size: 15px; font-variant-numeric: tabular-nums; }
+.zeile b { color: var(--text); font-weight: 600; }
+.ziel, .ueber { color: var(--gruen); } .unter { color: var(--orange); } .wenig { color: var(--rot); } .leer { color: var(--text2); }
+.liste { padding: 4px 16px; }
+.eintrag { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; }
+.eintrag + .eintrag { border-top: 1px solid var(--linie); }
+.eintrag .zeit { color: var(--text2); font-size: 14px; font-variant-numeric: tabular-nums; }
+.eintrag .wert { font-weight: 600; font-variant-numeric: tabular-nums; }
+.fuss { text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <section id="tor">
+    <h1>Gesperrt</h1>
+    <form id="form" autocomplete="on">
+      <input type="text" name="username" autocomplete="username" value="Schlaf-Kopie" hidden readonly>
+      <input id="pw" name="password" type="password" placeholder="Passwort" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required maxlength="64">
+      <label class="merken"><input type="checkbox" id="merken"> Auf diesem Gerät merken</label>
+      <button type="submit" id="knopf">Öffnen</button>
+      <p id="meldung" role="alert"></p>
+    </form>
+  </section>
+  <section id="inhalt" hidden></section>
+</main>
+<script>"use strict";
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const AAD = "schlaf-kopie-v1", MIN_IT = 600000, MAX_IT = 5000000;
+  const TAGE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+  const MONATE = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
+  const BEW = { ziel: "Im Ziel", unter: "Unter dem Ziel", ueber: "Über dem Ziel", wenig: "Deutlich zu wenig" };
+
+  // ---------- Gerätespeicher (IndexedDB, nur wenn „merken“ gewählt) ----------
+  function db() {
+    return new Promise((ok, f) => {
+      const r = indexedDB.open("kopie", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("kv");
+      r.onsuccess = () => ok(r.result); r.onerror = () => f(r.error);
+    });
+  }
+  async function hole(k) {
+    try { const d = await db(); return await new Promise((ok, f) => { const r = d.transaction("kv").objectStore("kv").get(k); r.onsuccess = () => ok(r.result); r.onerror = () => f(r.error); }); }
+    catch (_) { return undefined; }
+  }
+  async function setze(k, v) {
+    try {
+      const d = await db();
+      await new Promise((ok, f) => { const t = d.transaction("kv", "readwrite"); const s = t.objectStore("kv"); if (v === undefined) s.delete(k); else s.put(v, k); t.oncomplete = ok; t.onerror = () => f(t.error); });
+    } catch (_) { /* privat: egal */ }
+  }
+
+  // ---------- Entschlüsseln ----------
+  const normal = (pw) => String(pw).toLowerCase().replace(/[\s-]+/g, "");
+  const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  async function entschluesseln(datei, pw) {
+    const it = Number(datei.it);
+    if (datei.v !== 1 || !Number.isInteger(it) || it < MIN_IT || it > MAX_IT) throw new Error("Datei ungültig.");
+    const salt = b64(datei.salt), iv = b64(datei.iv), ct = b64(datei.ct);
+    const roh = await crypto.subtle.importKey("raw", new TextEncoder().encode(normal(pw)), "PBKDF2", false, ["deriveKey"]);
+    const key = await crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt, iterations: it }, roh,
+      { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    let klar;
+    try { klar = await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: new TextEncoder().encode(AAD) }, key, ct); }
+    catch (_) { const e = new Error("Passwort falsch."); e.pw = true; throw e; }
+    return JSON.parse(new TextDecoder().decode(klar).trimEnd());
+  }
+  async function laden() {
+    const r = await fetch(`k.json?t=${Date.now()}`, { cache: "no-store", credentials: "omit" });
+    if (!r.ok) throw new Error(`Datei nicht erreichbar (${r.status}).`);
+    return r.json();
+  }
+
+  // ---------- Anzeige ----------
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const z2 = (n) => String(n).padStart(2, "0");
+  const uhr = (ts) => { const d = new Date(ts * 1000); return `${z2(d.getHours())}:${z2(d.getMinutes())}`; };
+  const dIso = (iso) => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d); };
+  const kurz = (s) => { const m = Math.round(s / 60); return `${Math.floor(m / 60)}:${z2(m % 60)}`; };
+  const lang = (s) => { const m = Math.round(s / 60), h = Math.floor(m / 60), r = m % 60; return h && r ? `${h} Std. ${r} Min.` : h ? `${h} Std.` : `${r} Min.`; };
+  const bew = (b) => (b && /^(ziel|unter|ueber|wenig)$/.test(b) ? b : "leer");
+  function tagName(iso, heute) {
+    const diff = Math.round((dIso(heute) - dIso(iso)) / 86400000);
+    if (diff === 0) return "Heute"; if (diff === 1) return "Gestern"; if (diff === 2) return "Vorgestern";
+    const d = dIso(iso); return `${TAGE[d.getDay()].slice(0, 2)}., ${d.getDate()}. ${MONATE[d.getMonth()]}`;
+  }
+  function standText(ts) {
+    if (!ts) return "unbekannt";
+    const d = new Date(ts * 1000);
+    return `${d.getDate()}. ${MONATE[d.getMonth()]} ${d.getFullYear()}, ${uhr(ts)}`;
+  }
+  function nacht(n, titel, gross) {
+    if (!n) return `<p class="etikett">${titel}</p><p class="${gross ? "gross" : "mittel"} leer">–</p><p class="zeile">Keine Daten</p>`;
+    const b = bew(n.bewertung);
+    const wach = n.wach_kurz ? `${n.wachphasen} Wachphase${n.wachphasen === 1 ? "" : "n"} · ${lang(n.wach_kurz)}` : n.wachphasen ? `${n.wachphasen}× gestört` : "Keine Wachphasen";
+    return `<p class="etikett">${titel}</p>
+      <p class="${gross ? "gross" : "mittel"} ${b}">${kurz(n.dauer)}<span class="einheit">h</span></p>
+      <p class="zeile"><b>${uhr(n.einschlaf)}</b> → <b>${uhr(n.aufstehen)}</b></p>
+      ${gross ? `<p class="zeile">${esc(wach)}</p><p class="zeile ${b}">${BEW[b] || ""}</p>` : ""}`;
+  }
+  function zeigen(d) {
+    const zr = (name, z) => `<div><p class="etikett">${name}</p><p class="mittel ${bew(z && z.bewertung)}">${z && z.schnitt != null ? kurz(z.schnitt) + '<span class="einheit">h</span>' : "–"}</p>
+      <p class="zeile">${z && z.naechte ? z.naechte + (z.naechte === 1 ? " Nacht" : " Nächte") : "keine Daten"}</p></div>`;
+    const liste = (d.liste || []).slice(0, 21).map((n) => `<div class="eintrag"><div><div>${tagName(n.datum, d.heute)}</div>
+      <div class="zeit">${n.dauer == null ? "Keine Daten" : `${uhr(n.einschlaf)} – ${uhr(n.aufstehen)}${n.wach_kurz ? " · wach " + lang(n.wach_kurz) : ""}`}</div></div>
+      <div class="wert ${n.dauer == null ? "leer" : bew(n.bewertung)}">${n.dauer == null ? "–" : kurz(n.dauer) + " h"}</div></div>`).join("");
+    const t = d.tage || [];
+    $("#inhalt").innerHTML = `<p class="hinweis">Stand: ${standText(d.stand)}</p>
+      <h1>Schlaf</h1>
+      <section class="karte">${nacht(t[0], "Heute", true)}</section>
+      <div class="zwei"><section class="karte">${nacht(t[1], "Gestern")}</section><section class="karte">${nacht(t[2], "Vorgestern")}</section></div>
+      <h2>Durchschnitt</h2>
+      <section class="karte drei">${zr("Woche", d.woche)}${zr("Monat", d.monat)}${zr("Jahr", d.jahr)}</section>
+      <div class="zwei">
+        <section class="karte"><p class="etikett">Serie</p><p class="mittel ${d.serie ? "ziel" : "leer"}">${Number(d.serie) || 0}</p><p class="zeile">Nächte im Ziel in Folge</p></section>
+        <section class="karte"><p class="etikett">Schlafschuld</p><p class="mittel ${d.schuld == null ? "leer" : d.schuld > 0 ? "unter" : "ziel"}">${d.schuld == null ? "–" : kurz(d.schuld) + '<span class="einheit">h</span>'}</p><p class="zeile">gegenüber 7,5 Std.</p></section>
+      </div>
+      <h2>Rhythmus</h2>
+      <section class="karte"><div class="zwei"><div><p class="etikett">Ø Einschlafen</p><p class="mittel">${esc(d.einschlaf_schnitt || "–")}</p></div>
+        <div><p class="etikett">Ø Aufstehen</p><p class="mittel">${esc(d.aufstehen_schnitt || "–")}</p></div></div>
+        <p class="zeile">Regelmäßigkeit: <b>${esc(d.regelmaessigkeit || "–")}</b>${d.streuung_min != null ? ` (± ${Number(d.streuung_min)} Min.)` : ""}</p></section>
+      <h2>Nächte</h2>
+      <section class="karte liste">${liste}</section>
+      <div class="fuss"><button class="leise" id="sperren">Sperren</button> <button class="leise" id="vergessen">Passwort auf diesem Gerät vergessen</button></div>`;
+    $("#tor").hidden = true; $("#inhalt").hidden = false;
+    $("#sperren").onclick = () => location.reload();
+    $("#vergessen").onclick = async () => { await setze("pw", undefined); location.reload(); };
+  }
+
+  async function oeffnen(pw, merken) {
+    const knopf = $("#knopf"); knopf.disabled = true; $("#meldung").textContent = "";
+    try {
+      const d = await entschluesseln(await laden(), pw);
+      if (merken) await setze("pw", normal(pw));
+      zeigen(d); $("#pw").value = "";
+    } catch (e) {
+      if (e.pw) await setze("pw", undefined);
+      $("#tor").hidden = false; $("#meldung").textContent = e.message || "Fehler beim Öffnen.";
+    } finally { knopf.disabled = false; }
+  }
+  $("#form").addEventListener("submit", (ev) => { ev.preventDefault(); oeffnen($("#pw").value, $("#merken").checked); });
+  (async () => { const pw = await hole("pw"); if (pw) { $("#merken").checked = true; oeffnen(pw, true); } })();
+})();
+</script>
+</body>
+</html>
